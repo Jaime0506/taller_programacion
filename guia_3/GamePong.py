@@ -39,7 +39,7 @@ brick = pygame.transform.scale(brick, (brick.get_width() // resize_const_brick, 
 
 # Initial position of the ball
 ballRect = ball.get_rect()
-initial_ball_position = (width // 2, 250)
+initial_ball_position = (width // 2 + 100, 250)
 ballRect.move_ip(initial_ball_position)
 
 # Initial position of the paddle
