@@ -69,7 +69,7 @@ game_over_sound = pygame.mixer.Sound(game_over_sound_path)
 background = pygame.transform.scale(background, (width, height))
 
 ship_player1 = pygame.transform.scale(ship_player1, (ship_player1.get_width() // 4, ship_player1.get_height() // 4))
-ship_player2 = pygame.transform.scale(ship_player2, (ship_player1.get_width() // 4, ship_player1.get_height() // 4))
+ship_player2 = pygame.transform.scale(ship_player2, (ship_player2.get_width() // 4, ship_player2.get_height() // 4))
 
 shot_player1 = pygame.transform.scale(shot_player1, (shot_player1.get_width() // 12, shot_player1.get_height() // 12))
 shot_player2 = pygame.transform.scale(shot_player1, (shot_player1.get_width() // 12, shot_player1.get_height() // 12))
@@ -124,11 +124,24 @@ score = 0
 internal_score = 0
 
 # Last position ship
-last_position_ship = x_ship_player1
+# last_position_ship = x_ship_player1
 
-player2.push({'x_ship': x_ship_player1})
-
+# player2.push({'x_ship': x_ship_player1})
 key = 0
+
+global player
+global ship_player 
+global ship_react_player 
+global x_ship_player
+global y_ship_player
+
+global x_shot_player
+
+global last_position_ship
+global shot_player
+
+global ref_ship_player
+
 
 def selectPlayer():
     global key 
@@ -145,44 +158,75 @@ def selectPlayer():
         ref_ship_player1.update({'active': True})
         print('You are player 1')
 
-
 selectPlayer()
 
+if key == 1:
+    player = player1
+    ship_player = ship_player1
+    ship_react_player = ship_react_player1
+    x_ship_player = x_ship_player1
+    y_ship_player = y_ship_player1
+
+    x_shot_player = x_shot_player1
+    
+    last_position_ship = x_ship_player
+    shot_player = shot_player1
+
+    ref_ship_player = ref_ship_player1
+
+if key == 2:
+    player = player2
+    ship_player = ship_player2
+    ship_react_player = ship_react_player2
+    x_ship_player = x_ship_player2
+    y_ship_player = y_ship_player2
+
+    x_shot_player = x_shot_player2
+
+    last_position_ship = x_ship_player
+    shot_player = shot_player2
+
+    ref_ship_player = ref_ship_player2
+
+print(ship_react_player)
+
 def update_database():
-    global x_ship_player1
+    global x_ship_player
     global last_position_ship
 
-    if last_position_ship != x_ship_player1:
-        ref_ship_player1.update({'x_ship': x_ship_player1})
-        last_position_ship = x_ship_player1
+    
+    if last_position_ship != x_ship_player:
+        ref_ship_player.update({'x_ship': x_ship_player})
+        last_position_ship = x_ship_player
+        
 
 def ship_functions(keys):
     move_ship(keys)
 
 def move_ship(keys):
-    global ship_react_player1
-    global x_ship_player1
+    global ship_react_player
+    global x_ship_player
     global last_position_ship
 
-    if keys[pygame.K_LEFT] and  ship_react_player1.x > 0:
-        ship_react_player1 = ship_react_player1.move(-speed_ship, 0)
-        x_ship_player1 -= speed_ship
+    if keys[pygame.K_LEFT] and  ship_react_player.x > 0:
+        ship_react_player = ship_react_player.move(-speed_ship, 0)
+        x_ship_player -= speed_ship
 
-    if keys[pygame.K_RIGHT] and ship_react_player1.x < 555:
-        ship_react_player1 = ship_react_player1.move(speed_ship, 0)
-        x_ship_player1 += speed_ship
+    if keys[pygame.K_RIGHT] and ship_react_player.x < 555:
+        ship_react_player = ship_react_player.move(speed_ship, 0)
+        x_ship_player += speed_ship
 
     update_thred = threading.Thread(target=update_database)
     update_thred.start()
 
 def fire_bullet():
     global last_shot_time
-    global shot_rect_player1
+    global shot_rect_player
 
     current_time = pygame.time.get_ticks()
 
     if current_time - last_shot_time >= 500:
-        new_bullet = shot_player1.get_rect(midtop=(x_ship_player1 + 43, y_ship_player1 - 30))
+        new_bullet = shot_player.get_rect(midtop=(x_ship_player + 43, y_ship_player - 30))
         bullets.append(new_bullet)
 
         last_shot_time = current_time
@@ -248,7 +292,7 @@ def check_collisions_between_asteroids_ship():
     global asteroids
 
     for rock in asteroids:
-        if  ship_react_player1.colliderect(rock):
+        if  ship_react_player.colliderect(rock):
             background_sound.stop()
 
             game_over()
@@ -264,12 +308,12 @@ def increment_speed():
 
 def draw_collision_rectangles():
     global screen
-    global ship_react_player1
+    global ship_react_player
     global bullets
     global asteroids
 
     # Dibujar rectángulo alrededor de la nave
-    pygame.draw.rect(screen, (255, 0, 0), ship_react_player1, 2)
+    pygame.draw.rect(screen, (255, 0, 0), ship_react_player, 2)
 
     # Dibujar rectángulos alrededor de las balas
     for bullet in bullets:
@@ -311,14 +355,14 @@ while playing:
     check_collisions_between_asteroids_ship()
 
     screen.blit(background, (0,0))
-    screen.blit(ship_player1, ship_react_player1)
+    screen.blit(ship_player, ship_react_player)
 
     for asteroidRec in asteroids:
         screen.blit(asteroid, asteroidRec)
         
     # Draw each  bullet in the list of active bullets
     for bullet in bullets:
-        screen.blit(shot_player1, bullet)
+        screen.blit(shot_player, bullet)
     
     draw_collision_rectangles()
 
