@@ -325,7 +325,16 @@ def draw_collision_rectangles():
 #cambios firebase
 def listen_for_changes(player_id):
     player_ref = db.reference(f'/players/{player_id}')
-    
+    def handle_change(event):
+        data = event.data
+        #actualizar posiciones
+        if 'x' in data:
+            x_ship_player = data['x']
+        if 'y' in data:
+            y_ship_player = data['y']
+        #actualizar posicion de acuerdo a los datos recibidos
+        ship_react_player.move_ip(x_ship_player,y_ship_player)
+    player_ref.listen(handle_change)
 while playing:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
