@@ -322,7 +322,10 @@ def draw_collision_rectangles():
     # Dibujar rectángulos alrededor de los asteroides
     for asteroid in asteroids:
         pygame.draw.rect(screen, (0, 0, 255), asteroid, 2)
-#
+#cambios firebase
+def listen_for_changes(player_id):
+    player_ref = db.reference(f'/players/{player_id}')
+    
 while playing:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
