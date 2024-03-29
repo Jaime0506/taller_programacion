@@ -335,6 +335,15 @@ def listen_for_changes(player_id):
         #actualizar posicion de acuerdo a los datos recibidos
         ship_react_player.move_ip(x_ship_player,y_ship_player)
     player_ref.listen(handle_change)
+
+#experimento
+def move_player(player_id,new_x,new_y):
+    player_ref = db.reference(f'/players/{player_id}')
+    player_ref.update({
+        'x': new_x,
+        'y': new_y,
+    })
+
 while playing:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
