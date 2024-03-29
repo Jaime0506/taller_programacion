@@ -130,8 +130,8 @@ internal_score = 0
 key = 0
 
 global player
-global ship_player 
-global ship_react_player 
+global ship_player
+global ship_react_player
 global x_ship_player
 global y_ship_player
 
@@ -144,7 +144,7 @@ global ref_ship_player
 
 
 def selectPlayer():
-    global key 
+    global key
 
     value = player1.get()
     active_player = value['-Nsz_waZceu5sMSuXRXq']['active']
@@ -168,7 +168,7 @@ if key == 1:
     y_ship_player = y_ship_player1
 
     x_shot_player = x_shot_player1
-    
+
     last_position_ship = x_ship_player
     shot_player = shot_player1
 
@@ -194,11 +194,11 @@ def update_database():
     global x_ship_player
     global last_position_ship
 
-    
+
     if last_position_ship != x_ship_player:
         ref_ship_player.update({'x_ship': x_ship_player})
         last_position_ship = x_ship_player
-        
+
 
 def ship_functions(keys):
     move_ship(keys)
@@ -250,7 +250,7 @@ def generate_asteroids():
 
             new_asteroid = asteroid.get_rect(midtop=(x_asterod, -30))
             asteroids.append(new_asteroid)
-            
+
             last_asteroid_time = current_time
 
 def check_collisions_between_bullets_asteroids():
@@ -322,7 +322,7 @@ def draw_collision_rectangles():
     # Dibujar rectángulos alrededor de los asteroides
     for asteroid in asteroids:
         pygame.draw.rect(screen, (0, 0, 255), asteroid, 2)
-
+#
 while playing:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -359,11 +359,11 @@ while playing:
 
     for asteroidRec in asteroids:
         screen.blit(asteroid, asteroidRec)
-        
+
     # Draw each  bullet in the list of active bullets
     for bullet in bullets:
         screen.blit(shot_player, bullet)
-    
+
     draw_collision_rectangles()
 
      # Render score text
