@@ -2,9 +2,8 @@ import pygame
 import os
 import random
 import threading
-
 import firebase_admin
-from firebase_admin import credentials, db
+from firebase_admin import credentials, db, exceptions
 
 # Connection to firebase
 key_path = os.path.join(os.path.dirname(__file__), 'firebase')
@@ -12,22 +11,23 @@ key = os.path.join(key_path, 'space-shooter-9c882-firebase-adminsdk-tndg0-ca7618
 
 cred = credentials.Certificate(key)
 firebase_admin.initialize_app(cred, {'databaseURL': 'https://space-shooter-9c882-default-rtdb.firebaseio.com/'})
-
-player1 = db.reference('/player_1')
-ref_ship_player1 = player1.child('-Nsz_waZceu5sMSuXRXq')
-
-player2 = db.reference('/player_2')
-ref_ship_player2 = player2.child('-NtXK3NuN1Ly55ArPwUi')
+try:
+    player1 = db.reference('/player_1')
+    ref_ship_player1 = player1.child('-Nsz_waZceu5sMSuXRXq')
+    player2 = db.reference('/player_2')
+    ref_ship_player2 = player2.child('-NtXK3NuN1Ly55ArPwUi')
+except exceptions.FirebaseError as firebase_error:
+    print(f"Se peto esta mrda: {firebase_error}")
 
 # Acces path to assets
 assest_path = os.path.join(os.path.dirname(__file__), 'assets')
 
 background_path = os.path.join(assest_path, 'background.jpg')
 
-ship_path_player1 = os.path.join(assest_path, 'nave.png')
+ship_path_player1 = os.path.join(assest_path, 'player_1.png')
 shot_path_player1 = os.path.join(assest_path, 'shot.png')
 
-ship_path_player2 = os.path.join(assest_path, 'nave.png')
+ship_path_player2 = os.path.join(assest_path, 'player_2.png')
 shot_path_player2 = os.path.join(assest_path, 'shot.png')
 
 asteroid_path = os.path.join(assest_path, 'asteroid.png')
@@ -91,11 +91,11 @@ ship_react_player2.move_ip(x_ship_player2, y_ship_player2)
 shot_rect_player1 = shot_player1.get_rect()
 x_shot_player1, y_shot_player1 = x_ship_player1 + 18, y_ship_player1 - 30
 
-shot_path_player2 = shot_player2.get_rect()
+shot_rect_player2 = shot_player2.get_rect()
 x_shot_player2, y_shot_player2 = x_ship_player2 + 18, y_ship_player2 - 30
 
 shot_rect_player1.move_ip(x_shot_player1, y_shot_player1)
-shot_path_player2.move_ip(x_shot_player2, y_shot_player2)
+shot_rect_player2.move_ip(x_shot_player2, y_shot_player2)
 
 # Asteroid
 asteroidRect = asteroid.get_rect()
@@ -130,8 +130,8 @@ internal_score = 0
 key = 0
 
 global player
-global ship_player
-global ship_react_player
+global ship_player 
+global ship_react_player 
 global x_ship_player
 global y_ship_player
 
@@ -145,47 +145,51 @@ global ref_ship_player
 
 def selectPlayer():
     global key
+    value1 = player1.get()
+    value2 = player2.get()
 
-    value = player1.get()
-    active_player = value['-Nsz_waZceu5sMSuXRXq']['active']
+    active_player1 = value1['-Nsz_waZceu5sMSuXRXq']['active']
+    active_player2 = value2['-NtXK3NuN1Ly55ArPwUi']['active']
 
-    if active_player:
+    if active_player1 and active_player2:
+        key = random.randint(1, 2)
+        if key == 1:
+            ref_ship_player1.update({'active': True})
+            print('You are player 1')
+        else:
+            ref_ship_player2.update({'active': True})
+            print('You are player 2')
+    elif active_player1:
+        key = 1
+        ref_ship_player1.update({'active': True})
+        print('You are player 1')
+    elif active_player2:
         key = 2
         ref_ship_player2.update({'active': True})
         print('You are player 2')
     else:
-        key = 1
-        ref_ship_player1.update({'active': True})
-        print('You are player 1')
+        print("No active players found.")
 
 selectPlayer()
-
 if key == 1:
     player = player1
     ship_player = ship_player1
     ship_react_player = ship_react_player1
     x_ship_player = x_ship_player1
     y_ship_player = y_ship_player1
-
     x_shot_player = x_shot_player1
-
     last_position_ship = x_ship_player
     shot_player = shot_player1
-
     ref_ship_player = ref_ship_player1
-
-if key == 2:
+elif key == 2:
     player = player2
     ship_player = ship_player2
     ship_react_player = ship_react_player2
     x_ship_player = x_ship_player2
     y_ship_player = y_ship_player2
-
     x_shot_player = x_shot_player2
-
     last_position_ship = x_ship_player
     shot_player = shot_player2
-
     ref_ship_player = ref_ship_player2
 
 print(ship_react_player)
@@ -194,35 +198,75 @@ def update_database():
     global x_ship_player
     global last_position_ship
 
+    with threading.Lock():
+        if last_position_ship != x_ship_player:
+            ref_ship_player.update({'x_ship': x_ship_player})
+            last_position_ship = x_ship_player
 
-    if last_position_ship != x_ship_player:
-        ref_ship_player.update({'x_ship': x_ship_player})
-        last_position_ship = x_ship_player
+#listen changes in firebase
+def listen_player_online():
+    global x_ship_player1, y_ship_player1, x_ship_player2, y_ship_player2
+
+    def callback(event):
+        data = event.data
+        if data is not None:
+            if key == 1:
+                x_ship_player2 = data.get('x_ship', x_ship_player)
+                y_ship_player2 = data.get('y_ship', y_ship_player)  # Se actualiza y_ship_player2
+            elif key == 2:
+                x_ship_player1 = data.get('x_ship', x_ship_player)
+                y_ship_player1 = data.get('y_ship', y_ship_player)  # Se actualiza y_ship_player1
+
+    player_ref1 = player1.child('-Nsz_waZceu5sMSuXRXq')
+    player_ref2 = player2.child('-NtXK3NuN1Ly55ArPwUi')
+    player_ref1.listen(callback)
+    player_ref2.listen(callback)
+
+#New Thread
+threading.Thread(target=listen_player_online).start()
 
 
-def ship_functions(keys):
-    move_ship(keys)
 
 def move_ship(keys):
-    global ship_react_player
-    global x_ship_player
-    global last_position_ship
-
-    if keys[pygame.K_LEFT] and  ship_react_player.x > 0:
+    global ship_react_player, x_ship_player, x_ship_player1, x_ship_player2, last_position_ship, ship_player1, ship_player
+    
+    if keys[pygame.K_LEFT] and ship_react_player.x > 0:
         ship_react_player = ship_react_player.move(-speed_ship, 0)
-        x_ship_player -= speed_ship
+        if key == 1:
+            x_ship_player1 -= speed_ship
+            x_ship_player = x_ship_player1
+           
+           
+        elif key == 2:
+            x_ship_player2 -= speed_ship
+            x_ship_player = x_ship_player2
+            
+            
 
     if keys[pygame.K_RIGHT] and ship_react_player.x < 555:
         ship_react_player = ship_react_player.move(speed_ship, 0)
-        x_ship_player += speed_ship
-
-    update_thred = threading.Thread(target=update_database)
-    update_thred.start()
+        if key == 1:
+            x_ship_player1 += speed_ship
+            x_ship_player = x_ship_player1
+            
+            
+        elif key == 2:
+            x_ship_player2 += speed_ship
+            x_ship_player = x_ship_player2
+            
+            
+    last_position_ship = x_ship_player
+    update_database()
+    screen.blit(background, (0,0))
+    screen.blit(ship_player, ship_react_player)
+    screen.blit(ship_player, ship_react_player)
+    #update thread
+    update_thread = threading.Thread(target=update_database)
+    update_thread.start()
 
 def fire_bullet():
     global last_shot_time
-    global shot_rect_player
-
+    #aqui borre el global shot_rect_player
     current_time = pygame.time.get_ticks()
 
     if current_time - last_shot_time >= 500:
@@ -250,7 +294,7 @@ def generate_asteroids():
 
             new_asteroid = asteroid.get_rect(midtop=(x_asterod, -30))
             asteroids.append(new_asteroid)
-
+            
             last_asteroid_time = current_time
 
 def check_collisions_between_bullets_asteroids():
@@ -290,7 +334,6 @@ def game_over():
 
 def check_collisions_between_asteroids_ship():
     global asteroids
-
     for rock in asteroids:
         if  ship_react_player.colliderect(rock):
             background_sound.stop()
@@ -308,12 +351,13 @@ def increment_speed():
 
 def draw_collision_rectangles():
     global screen
-    global ship_react_player
+    global ship_react_player1, ship_react_player2
     global bullets
     global asteroids
 
     # Dibujar rectángulo alrededor de la nave
-    pygame.draw.rect(screen, (255, 0, 0), ship_react_player, 2)
+    pygame.draw.rect(screen, (255, 0, 0), ship_react_player1, 2)
+    pygame.draw.rect(screen, (255,0,0),ship_react_player2,2)
 
     # Dibujar rectángulos alrededor de las balas
     for bullet in bullets:
@@ -322,27 +366,6 @@ def draw_collision_rectangles():
     # Dibujar rectángulos alrededor de los asteroides
     for asteroid in asteroids:
         pygame.draw.rect(screen, (0, 0, 255), asteroid, 2)
-#cambios firebase
-def listen_for_changes(player_id):
-    player_ref = db.reference(f'/players/{player_id}')
-    def handle_change(event):
-        data = event.data
-        #actualizar posiciones
-        if 'x' in data:
-            x_ship_player = data['x']
-        if 'y' in data:
-            y_ship_player = data['y']
-        #actualizar posicion de acuerdo a los datos recibidos
-        ship_react_player.move_ip(x_ship_player,y_ship_player)
-    player_ref.listen(handle_change)
-
-#experimento
-def move_player(player_id,new_x,new_y):
-    player_ref = db.reference(f'/players/{player_id}')
-    player_ref.update({
-        'x': new_x,
-        'y': new_y,
-    })
 
 while playing:
     for event in pygame.event.get():
@@ -359,7 +382,7 @@ while playing:
     if keys[pygame.K_SPACE]:
         fire_bullet()
 
-    ship_functions(keys)
+    move_ship(keys)#move players
     generate_asteroids()
 
     for rock in asteroids:
@@ -375,16 +398,18 @@ while playing:
     check_collisions_between_bullets_asteroids()
     check_collisions_between_asteroids_ship()
 
-    screen.blit(background, (0,0))
-    screen.blit(ship_player, ship_react_player)
-
+    # ###aqui estaba el dibujado de la nave
+    # screen.blit(background, (0,0))
+    # screen.blit(ship_player1, ship_react_player1)
+    # screen.blit(ship_player2, ship_react_player2)
+    
     for asteroidRec in asteroids:
         screen.blit(asteroid, asteroidRec)
-
+        
     # Draw each  bullet in the list of active bullets
     for bullet in bullets:
         screen.blit(shot_player, bullet)
-
+    
     draw_collision_rectangles()
 
      # Render score text
@@ -397,5 +422,7 @@ while playing:
     # Show changes in the display
     pygame.display.flip()
     pygame.time.Clock().tick(60)
+
+    update_database()
 
 pygame.quit()
