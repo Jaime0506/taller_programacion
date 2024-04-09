@@ -199,15 +199,18 @@ def update_database():
     global last_position_ship
 
     with threading.Lock():
-        if last_position_ship != x_ship_player:
-            ref_ship_player.update({'x_ship': x_ship_player})
-            last_position_ship = x_ship_player
+        print("entre")
+        ref_ship_player.update({'x_ship': x_ship_player})
+        last_position_ship = x_ship_player
 
 #listen changes in firebase
 def listen_player_online():
     global x_ship_player1, y_ship_player1, x_ship_player2, y_ship_player2
 
     def callback(event):
+
+        print(event)
+
         data = event.data
         if data is not None:
             if key == 1:
@@ -223,9 +226,7 @@ def listen_player_online():
     player_ref2.listen(callback)
 
 #New Thread
-threading.Thread(target=listen_player_online).start()
-
-
+# threading.Thread(target=listen_player_online).start()
 
 def move_ship(keys):
     global ship_react_player, x_ship_player, x_ship_player1, x_ship_player2, last_position_ship, ship_player1, ship_player
@@ -240,8 +241,6 @@ def move_ship(keys):
         elif key == 2:
             x_ship_player2 -= speed_ship
             x_ship_player = x_ship_player2
-            
-            
 
     if keys[pygame.K_RIGHT] and ship_react_player.x < 555:
         ship_react_player = ship_react_player.move(speed_ship, 0)
@@ -256,10 +255,11 @@ def move_ship(keys):
             
             
     last_position_ship = x_ship_player
-    update_database()
+    
     screen.blit(background, (0,0))
     screen.blit(ship_player, ship_react_player)
     screen.blit(ship_player, ship_react_player)
+
     #update thread
     update_thread = threading.Thread(target=update_database)
     update_thread.start()
@@ -422,7 +422,5 @@ while playing:
     # Show changes in the display
     pygame.display.flip()
     pygame.time.Clock().tick(60)
-
-    update_database()
 
 pygame.quit()
