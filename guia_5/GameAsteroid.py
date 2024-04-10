@@ -210,8 +210,8 @@ def selectPlayer():
         screen.blit(player2_text, (width//2 - player2_text.get_width()//2, height//2 + 50))
         pygame.display.flip()
 
-loading_screen()
 selectPlayer()
+loading_screen()
 
 if key == 1:
     player = player1
@@ -268,36 +268,32 @@ def listen_player_online():
 threading.Thread(target=listen_player_online).start()
 
 def move_ship(keys):
-    global ship_react_player, x_ship_player, x_ship_player1, x_ship_player2, last_position_ship, ship_player1, ship_player
+    global ship_react_player, x_ship_player, x_ship_player1, x_ship_player2, last_position_ship, ship_player1, ship_player2
     
     if keys[pygame.K_LEFT] and ship_react_player.x > 0:
         ship_react_player = ship_react_player.move(-speed_ship, 0)
-        if key == 1:
-            x_ship_player1 -= speed_ship
-            x_ship_player = x_ship_player1
-           
-           
-        elif key == 2:
-            x_ship_player2 -= speed_ship
-            x_ship_player = x_ship_player2
-
+        x_ship_player1 -= speed_ship
     if keys[pygame.K_RIGHT] and ship_react_player.x < 555:
         ship_react_player = ship_react_player.move(speed_ship, 0)
-        if key == 1:
-            x_ship_player1 += speed_ship
-            x_ship_player = x_ship_player1
+        x_ship_player1 += speed_ship
+
+    #update position
+    if key == 1:
+        x_ship_player2_new_position = player2.child('-NtXK3NuN1Ly55ArPwUi').get('x_ship')
+        if x_ship_player2_new_position is not None:
+            x_ship_player2 = x_ship_player2_new_position
+            ship_react_player2.x = x_ship_player2
+    elif key == 2:
+        x_ship_player1_new_position = player1.child('-Nsz_waZceu5sMSuXRXq').get('x_ship')
+        if x_ship_player1_new_position is not None:
+            x_ship_player1 = x_ship_player1_new_position
+            ship_react_player1.x = x_ship_player1
             
-            
-        elif key == 2:
-            x_ship_player2 += speed_ship
-            x_ship_player = x_ship_player2
-            
-            
-    last_position_ship = x_ship_player
-    
+
+    #to render ships  
     screen.blit(background, (0,0))
-    screen.blit(ship_player, ship_react_player)
-    
+    screen.blit(ship_player1, ship_react_player1)
+    screen.blit(ship_player2, ship_react_player2)
 
     #update thread
     update_thread = threading.Thread(target=update_database)
