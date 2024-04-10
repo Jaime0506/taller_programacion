@@ -1,3 +1,4 @@
+import sys
 import pygame
 import os
 import random
@@ -142,34 +143,66 @@ global shot_player
 
 global ref_ship_player
 
+def loading_screen():
+    global player1_selected, player2_selected
+
+    loading = True
+    while loading:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+        screen.fill((0,0,0))
+        loading_text = font.render("Connecting Players...",True,(255,255,255))
+        screen.blit(loading_text, (width//2 - loading_text.get_width()//2, height//2 - loading_text.get_height()//2))
+        pygame.display.flip()
+
+        if player1_selected and player2_selected:
+            loading = False
+            print("Tan ready los players")
+
 
 def selectPlayer():
     global key
     value1 = player1.get()
     value2 = player2.get()
+    player1_selected = value1['-Nsz_waZceu5sMSuXRXq']['active']
+    player2_selected = value2['-NtXK3NuN1Ly55ArPwUi']['active']
+    selected = False
+    
+    while not selected:
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1:
+                    if not player1_selected:
+                        key = 1
+                        ref_ship_player1.update({'active':True})
+                        print('Player 1 selected')
+                        selected = True
+                    else:
+                        print("ya existe este jugador")
+                if event.key == pygame.K_2:
+                    if not player2_selected:
+                        key = 2
+                        ref_ship_player2.update({'active':True})
+                        print('Player 2 selected')
+                        selected = True
+                    else:
+                        print("ya existe este jugador")
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
+        #lOADING
+        screen.fill((0,0,0))
+        selection_text = font.render("Seleccione su jugador:", True, (255, 255, 255))
+        player1_text = font.render("Presione '1' para Jugador 1", True, (255, 255, 255))
+        player2_text = font.render("Presione '2' para Jugador 2", True, (255, 255, 255))
+        screen.blit(selection_text, (width//2 - selection_text.get_width()//2, height//2 - 50))
+        screen.blit(player1_text, (width//2 - player1_text.get_width()//2, height//2))
+        screen.blit(player2_text, (width//2 - player2_text.get_width()//2, height//2 + 50))
+        pygame.display.flip()
 
-    active_player1 = value1['-Nsz_waZceu5sMSuXRXq']['active']
-    active_player2 = value2['-NtXK3NuN1Ly55ArPwUi']['active']
-
-    if active_player1 and active_player2:
-        key = random.randint(1, 2)
-        if key == 1:
-            ref_ship_player1.update({'active': True})
-            print('You are player 1')
-        else:
-            ref_ship_player2.update({'active': True})
-            print('You are player 2')
-    elif active_player1:
-        key = 1
-        ref_ship_player1.update({'active': True})
-        print('You are player 1')
-    elif active_player2:
-        key = 2
-        ref_ship_player2.update({'active': True})
-        print('You are player 2')
-    else:
-        print("No active players found.")
-
+#loading_screen()
 selectPlayer()
 if key == 1:
     player = player1
@@ -199,7 +232,7 @@ def update_database():
     global last_position_ship
 
     with threading.Lock():
-        print("entre")
+        print("Connect")
         ref_ship_player.update({'x_ship': x_ship_player})
         last_position_ship = x_ship_player
 
@@ -208,9 +241,6 @@ def listen_player_online():
     global x_ship_player1, y_ship_player1, x_ship_player2, y_ship_player2
 
     def callback(event):
-
-        print(event)
-
         data = event.data
         if data is not None:
             if key == 1:
@@ -226,7 +256,7 @@ def listen_player_online():
     player_ref2.listen(callback)
 
 #New Thread
-# threading.Thread(target=listen_player_online).start()
+threading.Thread(target=listen_player_online).start()
 
 def move_ship(keys):
     global ship_react_player, x_ship_player, x_ship_player1, x_ship_player2, last_position_ship, ship_player1, ship_player
@@ -258,7 +288,7 @@ def move_ship(keys):
     
     screen.blit(background, (0,0))
     screen.blit(ship_player, ship_react_player)
-    screen.blit(ship_player, ship_react_player)
+    
 
     #update thread
     update_thread = threading.Thread(target=update_database)
@@ -278,7 +308,7 @@ def fire_bullet():
         background_sound.stop()
         shot_sound.play()
         background_sound.play()
-
+    
 def generade_random_position():
     x_asteroid = random.randint(int(0 + asteroid.get_width() / 2), int(555 -  asteroid.get_width() / 2))
 
