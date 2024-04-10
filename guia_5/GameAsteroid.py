@@ -143,7 +143,7 @@ global shot_player
 global ref_ship_player
 
 
-def selectPlayer():
+def selectPlayer(eventKey):
     global key
     value1 = player1.get()
     value2 = player2.get()
@@ -151,26 +151,24 @@ def selectPlayer():
     active_player1 = value1['-Nsz_waZceu5sMSuXRXq']['active']
     active_player2 = value2['-NtXK3NuN1Ly55ArPwUi']['active']
 
-    if active_player1 and active_player2:
-        key = random.randint(1, 2)
-        if key == 1:
-            ref_ship_player1.update({'active': True})
-            print('You are player 1')
-        else:
-            ref_ship_player2.update({'active': True})
-            print('You are player 2')
-    elif active_player1:
+
+    
+    if not active_player1:
         key = 1
         ref_ship_player1.update({'active': True})
         print('You are player 1')
-    elif active_player2:
+    else: 
+        print("ya existe este player")
+
+    if not active_player2:
         key = 2
         ref_ship_player2.update({'active': True})
         print('You are player 2')
     else:
-        print("No active players found.")
+        print("Ya existe este player")
 
 selectPlayer()
+
 if key == 1:
     player = player1
     ship_player = ship_player1
