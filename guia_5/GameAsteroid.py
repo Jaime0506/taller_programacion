@@ -453,5 +453,6 @@ while playing:
     # Show changes in the display
     pygame.display.flip()
     pygame.time.Clock().tick(60)
-
+ref_ship_player1.update({'active':False})
+ref_ship_player2.update({'active':False})
 pygame.quit()
