@@ -15,8 +15,10 @@ firebase_admin.initialize_app(cred, {'databaseURL': 'https://space-shooter-9c882
 try:
     player1 = db.reference('/player_1')
     ref_ship_player1 = player1.child('-Nsz_waZceu5sMSuXRXq')
+
     player2 = db.reference('/player_2')
     ref_ship_player2 = player2.child('-NtXK3NuN1Ly55ArPwUi')
+
 except exceptions.FirebaseError as firebase_error:
     print(f"Se peto esta mrda: {firebase_error}")
 
@@ -144,14 +146,20 @@ global shot_player
 global ref_ship_player
 
 def loading_screen():
-    global player1_selected, player2_selected
 
     loading = True
     while loading:
+
+        value1 = player1.get()
+        value2 = player2.get()
+        player1_selected = value1['-Nsz_waZceu5sMSuXRXq']['active']
+        player2_selected = value2['-NtXK3NuN1Ly55ArPwUi']['active']
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+
         screen.fill((0,0,0))
         loading_text = font.render("Connecting Players...",True,(255,255,255))
         screen.blit(loading_text, (width//2 - loading_text.get_width()//2, height//2 - loading_text.get_height()//2))
@@ -202,7 +210,7 @@ def selectPlayer():
         screen.blit(player2_text, (width//2 - player2_text.get_width()//2, height//2 + 50))
         pygame.display.flip()
 
-#loading_screen()
+loading_screen()
 selectPlayer()
 
 if key == 1:
@@ -453,6 +461,8 @@ while playing:
     # Show changes in the display
     pygame.display.flip()
     pygame.time.Clock().tick(60)
+
 ref_ship_player1.update({'active':False})
 ref_ship_player2.update({'active':False})
+
 pygame.quit()
