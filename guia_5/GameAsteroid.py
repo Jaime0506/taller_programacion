@@ -1,17 +1,16 @@
-import sys
 import pygame
-import os
-import random
-import threading
 import firebase_admin
-from firebase_admin import credentials, db, exceptions
+from firebase_admin import credentials
+from firebase_admin import db, exceptions
+import os
+import threading
+import random
 
-# Connection to firebase
+# Inicialización de Firebase para el jugador 1
 key_path = os.path.join(os.path.dirname(__file__), 'firebase')
 key = os.path.join(key_path, 'space-shooter-9c882-firebase-adminsdk-tndg0-ca7618fd2e.json')
-
-cred = credentials.Certificate(key)
-firebase_admin.initialize_app(cred, {'databaseURL': 'https://space-shooter-9c882-default-rtdb.firebaseio.com/'})
+firebase_sdk = credentials.Certificate(key)
+firebase_admin.initialize_app(firebase_sdk, {'databaseURL': 'https://space-shooter-9c882-default-rtdb.firebaseio.com/'})
 try:
     player1 = db.reference('/player_1')
     ref_ship_player1 = player1.child('-Nsz_waZceu5sMSuXRXq')
@@ -22,447 +21,214 @@ try:
 except exceptions.FirebaseError as firebase_error:
     print(f"Se peto esta mrda: {firebase_error}")
 
-# Acces path to assets
-assest_path = os.path.join(os.path.dirname(__file__), 'assets')
-
-background_path = os.path.join(assest_path, 'background.jpg')
-
-ship_path_player1 = os.path.join(assest_path, 'player_1.png')
-shot_path_player1 = os.path.join(assest_path, 'shot.png')
-
-ship_path_player2 = os.path.join(assest_path, 'player_2.png')
-shot_path_player2 = os.path.join(assest_path, 'shot.png')
-
-asteroid_path = os.path.join(assest_path, 'asteroid.png')
-game_over_text_path = os.path.join(assest_path, 'game_over.png')
-
-# Sounds paths
-shot_sound_path = os.path.join(assest_path, 'shot.wav')
-background_sound_path = os.path.join(assest_path, 'sound_background.wav')
-game_over_sound_path = os.path.join(assest_path, 'game_over.wav')
-
+# Inicialización de Pygame
 pygame.init()
 
-#  Config windows
-width = 640
-height = 460
-
-# Create windows
-screen = pygame.display.set_mode((width, height))
-pygame.display.set_caption("Asteroid game")
-
-# Load assets
-ship_player1 = pygame.image.load(ship_path_player1)
-ship_player2 = pygame.image.load(ship_path_player2)
-
-shot_player1 = pygame.image.load(shot_path_player1)
-shot_player2 = pygame.image.load(shot_path_player2)
-
-background = pygame.image.load(background_path).convert()
-asteroid = pygame.image.load(asteroid_path)
-
-game_over_text = pygame.image.load(game_over_text_path).convert()
-
-#  Load assets sounds
-shot_sound = pygame.mixer.Sound(shot_sound_path)
-background_sound = pygame.mixer.Sound(background_sound_path)
-game_over_sound = pygame.mixer.Sound(game_over_sound_path)
-
-# Resize assets
-background = pygame.transform.scale(background, (width, height))
-
-ship_player1 = pygame.transform.scale(ship_player1, (ship_player1.get_width() // 4, ship_player1.get_height() // 4))
-ship_player2 = pygame.transform.scale(ship_player2, (ship_player2.get_width() // 4, ship_player2.get_height() // 4))
-
-shot_player1 = pygame.transform.scale(shot_player1, (shot_player1.get_width() // 12, shot_player1.get_height() // 12))
-shot_player2 = pygame.transform.scale(shot_player1, (shot_player1.get_width() // 12, shot_player1.get_height() // 12))
-
-asteroid = pygame.transform.scale(asteroid, (asteroid.get_width() // 2.5, asteroid.get_height() // 2.5))
-game_over_text = pygame.transform.scale(game_over_text, (width, height))
-
-#  Initial position ship
-ship_react_player1 = ship_player1.get_rect()
-x_ship_player1, y_ship_player1 = 450, height - 100
-
-ship_react_player2 = ship_player2.get_rect()
-x_ship_player2, y_ship_player2 = 200, height - 100
-
-ship_react_player1.move_ip(x_ship_player1, y_ship_player1)
-ship_react_player2.move_ip(x_ship_player2, y_ship_player2)
-
-# Shot
-shot_rect_player1 = shot_player1.get_rect()
-x_shot_player1, y_shot_player1 = x_ship_player1 + 18, y_ship_player1 - 30
-
-shot_rect_player2 = shot_player2.get_rect()
-x_shot_player2, y_shot_player2 = x_ship_player2 + 18, y_ship_player2 - 30
-
-shot_rect_player1.move_ip(x_shot_player1, y_shot_player1)
-shot_rect_player2.move_ip(x_shot_player2, y_shot_player2)
-
-# Asteroid
-asteroidRect = asteroid.get_rect()
-
-# Game over
-game_over_text_rect = game_over_text.get_rect()
-game_over_text_rect.move_ip(width / 2 - game_over_text.get_width() / 2, height / 2 - game_over_text.get_height() / 2)
-
-font = pygame.font.Font(None, 36)
-
-playing = True
-
-# Config speed
-
-speed_ship = 4
-speed_asteroid = 3
-speed_shot = 4
-
-bullets = []
-asteroids = []
-
-last_shot_time = 0
-last_asteroid_time = 0
-
-score = 0
-internal_score = 0
-key = 0
-
-global player
-global ship_player 
-global ship_react_player 
-global x_ship_player
-global y_ship_player
-global x_shot_player
-global last_position_ship
-global shot_player
-global ref_ship_player
-
-def loading_screen():
-
-    loading = True
-    while loading:
-
-        value1 = player1.get()
-        value2 = player2.get()
-        player1_selected = value1['-Nsz_waZceu5sMSuXRXq']['active']
-        player2_selected = value2['-NtXK3NuN1Ly55ArPwUi']['active']
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-
-        screen.fill((0,0,0))
-        loading_text = font.render("Waiting for Players...",True,(255,255,255))
-        screen.blit(loading_text, (width//2 - loading_text.get_width()//2, height//2 - loading_text.get_height()//2))
-        pygame.display.flip()
-
-        if player1_selected and player2_selected:
-            loading = False
-            print("The players are ready")
-
-
-def selectPlayer():
-    global key
-    value1 = player1.get()
-    value2 = player2.get()
-    player1_selected = value1['-Nsz_waZceu5sMSuXRXq']['active']
-    player2_selected = value2['-NtXK3NuN1Ly55ArPwUi']['active']
-    selected = False
-    
-    while not selected:
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_1:
-                    if not player1_selected:
-                        key = 1
-                        ref_ship_player1.update({'active':True})
-                        print('Player 1 selected')
-                        selected = True
-                    else:
-                        print("player 1 already exists")
-                if event.key == pygame.K_2:
-                    if not player2_selected:
-                        key = 2
-                        ref_ship_player2.update({'active':True})
-                        print('Player 2 selected')
-                        selected = True
-                    else:
-                        print("player 2 already exists")
-                if event.key == pygame.K_ESCAPE:
-                    pygame.quit()
-                    sys.exit()
-        #lOADING
-        screen.fill((0,0,0))
-        selection_text = font.render("Selected Players:", True, (255, 255, 255))
-        player1_text = font.render("Press '1' to choose player 1", True, (255, 255, 255))
-        player2_text = font.render("Press '2' to choose player 2", True, (255, 255, 255))
-        screen.blit(selection_text, (width//2 - selection_text.get_width()//2, height//2 - 50))
-        screen.blit(player1_text, (width//2 - player1_text.get_width()//2, height//2))
-        screen.blit(player2_text, (width//2 - player2_text.get_width()//2, height//2 + 50))
-        pygame.display.flip()
-
-selectPlayer()
-loading_screen()
-
-if key == 1:
-    player = player1
-    ship_player = ship_player1
-    ship_react_player = ship_react_player1
-    x_ship_player = x_ship_player1
-    y_ship_player = y_ship_player1
-    x_shot_player = x_shot_player1
-    last_position_ship = x_ship_player
-    shot_player = shot_player1
-    ref_ship_player = ref_ship_player1
-elif key == 2:
-    player = player2
-    ship_player = ship_player2
-    ship_react_player = ship_react_player2
-    x_ship_player = x_ship_player2
-    y_ship_player = y_ship_player2
-    x_shot_player = x_shot_player2
-    last_position_ship = x_ship_player
-    shot_player = shot_player2
-    ref_ship_player = ref_ship_player2
-
-print(ship_react_player)
-
-def update_database():
-    global x_ship_player
-    global last_position_ship
-
-    with threading.Lock():
-        print("Connect")
-        ref_ship_player.update({'x_ship': x_ship_player})
-        last_position_ship = x_ship_player
-
-#listen changes in firebase
-def listen_player_online():
-    global x_ship_player, y_ship_player
-    def callback(event):
-        data = event.data
-        if data is not None:
-            if key == 1:
-                x_ship_player = data.get('x_ship', x_ship_player) # Recibir datos del Firebase
-                y_ship_player = data.get('y_ship', y_ship_player) # Recibir datos del Firebase
-            elif key == 2:
-                x_ship_player = data.get('x_ship', x_ship_player) # Recibir datos del Firebase
-                y_ship_player = data.get('y_ship', y_ship_player) # Recibir datos del Firebase
-
-    player_ref1 = player1.child('-Nsz_waZceu5sMSuXRXq')
-    player_ref2 = player2.child('-NtXK3NuN1Ly55ArPwUi')
-    player_ref1.listen(callback)
-    player_ref2.listen(callback)
-
-# #New Thread
-# threading.Thread(target=listen_player_online).start()
-
-def move_ship(keys):
-    global ship_react_player, x_ship_player, x_ship_player1, x_ship_player2, last_position_ship, ship_player1, ship_player
-
-    if keys[pygame.K_LEFT] and ship_react_player.x > 0:
-        ship_react_player = ship_react_player.move(-speed_ship, 0)
-        if key == 1:
-            x_ship_player1 -= speed_ship
-            x_ship_player = x_ship_player1
-            ref_ship_player1.update({'x_ship': x_ship_player1}) # Enviar datos al Firebase
-
-        elif key == 2:
-            x_ship_player2 -= speed_ship
-            x_ship_player = x_ship_player2
-            ref_ship_player2.update({'x_ship': x_ship_player2}) # Enviar datos al Firebase
-
-    if keys[pygame.K_RIGHT] and ship_react_player.x < 555:
-        ship_react_player = ship_react_player.move(speed_ship, 0)
-        if key == 1:
-            x_ship_player1 += speed_ship
-            x_ship_player = x_ship_player1
-            ref_ship_player1.update({'x_ship': x_ship_player1}) # Enviar datos al Firebase
-
-        elif key == 2:
-            x_ship_player2 += speed_ship
-            x_ship_player = x_ship_player2
-            ref_ship_player2.update({'x_ship': x_ship_player2}) # Enviar datos al Firebase
-
-    last_position_ship = x_ship_player
-    
-    screen.blit(background, (0,0))
-    screen.blit(ship_player1, ship_react_player1)
-    screen.blit(ship_player2, ship_react_player2)
-    #update thread
-    update_thread = threading.Thread(target=update_database)
-    update_thread.start()
-    update_database()
-
-
-def fire_bullet():
-    global last_shot_time
-    #aqui borre el global shot_rect_player
-    current_time = pygame.time.get_ticks()
-
-    if current_time - last_shot_time >= 500:
-        new_bullet = shot_player.get_rect(midtop=(x_ship_player + 43, y_ship_player - 30))
-        bullets.append(new_bullet)
-
-        last_shot_time = current_time
-
-        background_sound.stop()
-        shot_sound.play()
-        background_sound.play()
-    
-def generade_random_position():
-    x_asteroid = random.randint(int(0 + asteroid.get_width() / 2), int(555 -  asteroid.get_width() / 2))
-
-    return x_asteroid
-
-def generate_asteroids():
-    global last_asteroid_time
-    current_time = pygame.time.get_ticks()
-
-    if current_time - last_asteroid_time >= 500:
-        if len(asteroids) < 3:
-            x_asterod = generade_random_position()
-
-            new_asteroid = asteroid.get_rect(midtop=(x_asterod, -30))
-            asteroids.append(new_asteroid)
-            
-            last_asteroid_time = current_time
-
-def check_collisions_between_bullets_asteroids():
-    global bullets
-    global asteroids
-    global score
-    global internal_score
-
-    # Iterating over each bullet and asteroid to check for collision
-    for bullet in bullets:
-        for asteroid in asteroids:
-            if bullet.colliderect(asteroid):
-                bullets.remove(bullet)
-                asteroids.remove(asteroid)
-                score += 1
-                internal_score += 1
-                break
-
-def game_over():
-    global playing
-    global screen
-    global score
-    global internal_score
-
-    screen.blit(game_over_text, game_over_text_rect)
-
-    shot_sound.stop()
-    background_sound.stop()
-    game_over_sound.play()
-
-    score = 0
-    internal_score = 0
-
-    pygame.display.flip()
-    pygame.time.delay(3000)
-    playing = False
-
-def check_collisions_between_asteroids_ship():
-    global asteroids
-    for rock in asteroids:
-        if  ship_react_player1.colliderect(rock):
-            background_sound.stop()
-
-            game_over()
-
-def increment_speed():
-    global speed_asteroid
-    global score
-    global internal_score
-
-    if score % 5 == 0 and score > 0 and internal_score == 5:
-        speed_asteroid += 1
-        internal_score = 0
-
-def draw_collision_rectangles():
-    global screen
-    global ship_react_player1, ship_react_player2
-    global bullets
-    global asteroids
-
-    # Dibujar rectángulo alrededor de la nave
-    pygame.draw.rect(screen, (255, 0, 0), ship_react_player1, 2)
-    pygame.draw.rect(screen, (255,0,0),ship_react_player2,2)
-
-    # Dibujar rectángulos alrededor de las balas
-    for bullet in bullets:
-        pygame.draw.rect(screen, (0, 255, 0), bullet, 2)
-
-    # Dibujar rectángulos alrededor de los asteroides
-    for asteroid in asteroids:
-        pygame.draw.rect(screen, (0, 0, 255), asteroid, 2)
-
-while playing:
+# Configuración de la ventana del juego
+ANCHO, ALTO = 800, 600
+ventana = pygame.display.set_mode((ANCHO, ALTO))
+pygame.display.set_caption("Asteroides")
+
+# Colores
+BLANCO = (255, 255, 255)
+NEGRO = (0, 0, 0)
+
+# Carga de imágenes
+assest_path = os.path.join(os.path.dirname(__file__), 'assets')
+avion_path = os.path.join(assest_path, 'player_1.png')  # Cambia "avion.png" por la ruta de la imagen del avión del jugador 1
+avion_img = pygame.image.load(avion_path)
+avion_img = pygame.transform.scale(avion_img, (60, 60))
+roca_path = os.path.join(assest_path, 'asteroid.png')
+roca_img = pygame.image.load(roca_path)
+roca_img = pygame.transform.scale(roca_img, (50, 50))
+bala_img = pygame.Surface((4, 10))
+bala_img.fill(NEGRO)
+fondo_path = os.path.join(assest_path, 'background.jpg')
+fondo_img = pygame.image.load(fondo_path)
+fondo_img = pygame.transform.scale(fondo_img, (ANCHO, ALTO))
+
+
+class Puntuacion:
+    def __init__(self):
+        self.puntos = 0
+
+    def aumentar_puntuacion(self):
+        self.puntos += 1
+
+    def reiniciar_puntuacion(self):
+        self.puntos = 0
+
+
+class Avion(pygame.sprite.Sprite):
+    def __init__(self, jugador_id, pos_x, pos_y):
+        super().__init__()
+        self.jugador_id = jugador_id
+        self.image = avion_img
+        self.rect = self.image.get_rect()
+        self.rect.centerx = pos_x
+        self.rect.centery = pos_y
+        self.speed = 5
+
+        # Definir las coordenadas de destino
+        self.target_x = pos_x
+        self.target_y = pos_y
+
+    def update(self):
+        # Mover hacia las coordenadas de destino
+        if self.rect.centerx < self.target_x:
+            self.rect.centerx += min(self.speed, self.target_x - self.rect.centerx)
+        elif self.rect.centerx > self.target_x:
+            self.rect.centerx -= min(self.speed, self.rect.centerx - self.target_x)
+        if self.rect.centery < self.target_y:
+            self.rect.centery += min(self.speed, self.target_y - self.rect.centery)
+        elif self.rect.centery > self.target_y:
+            self.rect.centery -= min(self.speed, self.rect.centery - self.target_y)
+
+        # Asegurar que el avión no se salga de la pantalla
+        self.rect.centerx = max(self.rect.centerx, 0)
+        self.rect.centerx = min(self.rect.centerx, ANCHO)
+        self.rect.centery = max(self.rect.centery, 0)
+        self.rect.centery = min(self.rect.centery, ALTO)
+
+
+class Laser(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y, rocas_sprites, puntuacion):
+        super().__init__()
+        self.image = bala_img
+        self.rect = self.image.get_rect()
+        self.rect.centerx = pos_x
+        self.rect.centery = pos_y
+        self.speed = 10
+        self.rocas_sprites = rocas_sprites
+        self.puntuacion = puntuacion
+
+    def update(self):
+        self.rect.centery -= self.speed
+        if self.rect.bottom < 0:
+            self.kill()
+
+        # Verificar colisiones con las rocas
+        colisiones = pygame.sprite.spritecollide(self, self.rocas_sprites, True)
+        for roca in colisiones:
+            self.puntuacion.aumentar_puntuacion()
+            self.kill()
+
+
+class Roca(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = roca_img
+        self.rect = self.image.get_rect()
+        self.rect.x = random.randrange(ANCHO - self.rect.width)
+        self.rect.y = random.randrange(-100, -40)
+        self.speedy = random.randrange(1, 4)  # Reducir la velocidad vertical máxima
+        self.speedx = random.randrange(-1, 1)  # Reducir la velocidad horizontal máxima
+
+    def update(self):
+        self.rect.y += self.speedy
+        self.rect.x += self.speedx
+        if self.rect.top > ALTO + 10 or self.rect.left < -25 or self.rect.right > ANCHO + 20:
+            self.rect.x = random.randrange(ANCHO - self.rect.width)
+            self.rect.y = random.randrange(-100, -40)
+            self.speedy = random.randrange(1, 4)  # Reducir la velocidad vertical máxima
+            self.speedx = random.randrange(-1, 1)  # Reducir la velocidad horizontal máxima
+
+
+# Función para manejar eventos de teclado para el jugador 1
+def manejar_eventos_teclado_jugador1(avion_local, todos_sprites, rocas_sprites, puntuacion):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            playing = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                playing = False
+            return False
+
     keys = pygame.key.get_pressed()
 
-    background_sound.play()
+    # Actualizar las coordenadas del avión local según las entradas del teclado
+    if keys[pygame.K_LEFT]:  # Tecla de flecha izquierda
+        avion_local.target_x -= avion_local.speed
+    if keys[pygame.K_RIGHT]:  # Tecla de flecha derecha
+        avion_local.target_x += avion_local.speed
+    if keys[pygame.K_UP]:  # Tecla de flecha arriba
+        avion_local.target_y -= avion_local.speed
+    if keys[pygame.K_DOWN]:  # Tecla de flecha abajo
+        avion_local.target_y += avion_local.speed
+    if keys[pygame.K_SPACE]:  # Tecla de espacio para disparar láser
+        laser = Laser(avion_local.rect.centerx, avion_local.rect.centery, rocas_sprites, puntuacion)
+        todos_sprites.add(laser)
 
-    # Exit game when press the ESC key
-    if keys[pygame.K_ESCAPE]:
-        playing = False
+    # Establecer límites para las coordenadas target
+    avion_local.target_x = min(max(avion_local.target_x, 0), ANCHO)
+    avion_local.target_y = min(max(avion_local.target_y, 0), ALTO)
 
-    if keys[pygame.K_SPACE]:
-        fire_bullet()
+    # Escribir las coordenadas del avión local en Firebase para el jugador 1
+    ref = db.reference('/player_1/-Nsz_waZceu5sMSuXRXq')
+    ref.update({
+        'x_ship': avion_local.target_x,
+        'y_ship': avion_local.target_y
 
-    move_ship(keys)#move players
-    generate_asteroids()
+    })
 
-    for rock in asteroids:
-        rock.move_ip(0, +speed_asteroid)
+    return True
 
-    asteroids = [rock for rock in asteroids if rock.y < 500]
 
-    for bullet in bullets:
-        bullet.move_ip(0, -speed_shot)
+# Función para leer las coordenadas del avión remoto desde Firebase
+def leer_coordenadas_jugador2(avion_remoto):
+    while True:
+        ref = db.reference('/player_2/-NtXK3NuN1Ly55ArPwUi')
+        coordenadas_jugador2 = ref.get()
+        if coordenadas_jugador2 is not None:
+            avion_remoto.target_x = coordenadas_jugador2['x_ship']
+            avion_remoto.target_y = coordenadas_jugador2['y_ship']
 
-    bullets = [bullet for bullet in bullets if bullet.y > 0]
 
-    check_collisions_between_bullets_asteroids()
-    check_collisions_between_asteroids_ship()
+# Función principal del juego
+def main():
+    mi_jugador = 1  # Este es el jugador actual, cambia esto a 2 si eres el Jugador 2
+    avion_local = Avion(mi_jugador, ANCHO // 2, ALTO // 2)  # Crear avión local
+    avion_remoto = Avion(2 if mi_jugador == 1 else 1, ANCHO // 2, ALTO // 2)  # Crear avión remoto
 
-    # ###aqui estaba el dibujado de la nave
-    # screen.blit(background, (0,0))
-    # screen.blit(ship_player1, ship_react_player1)
-    # screen.blit(ship_player2, ship_react_player2)
-    
-    for asteroidRec in asteroids:
-        screen.blit(asteroid, asteroidRec)
-        
-    # Draw each  bullet in the list of active bullets
-    for bullet in bullets:
-        screen.blit(shot_player, bullet)
-    
-    draw_collision_rectangles()
+    todos_sprites = pygame.sprite.Group()  # Grupo para todos los sprites (aviones, láseres, asteroides, etc.)
+    rocas_sprites = pygame.sprite.Group()  # Grupo para los asteroides
 
-     # Render score text
-    score_text = font.render(f"Score: {score}", True, (255, 255, 255))  # Render score text
-    screen.blit(score_text, (10, 10))  # Blit score text on screen
+    puntuacion = Puntuacion()  # Crear objeto de puntuación
 
-    # Increment velocity asteroids
-    increment_speed()
+    # Generar asteroides
+    for _ in range(5):  # Reducir el número de asteroides
+        roca = Roca()
+        todos_sprites.add(roca)
+        rocas_sprites.add(roca)
+        pygame.time.wait(200)  # Añadir un pequeño retraso entre la generación de cada asteroide
 
-    # Show changes in the display
-    pygame.display.flip()
-    pygame.time.Clock().tick(60)
+    # Crear y arrancar el hilo para leer las coordenadas del avión remoto
+    hilo_lectura = threading.Thread(target=leer_coordenadas_jugador2, args=(avion_remoto,))
+    hilo_lectura.start()
 
-ref_ship_player1.update({'active':False})
-ref_ship_player2.update({'active':False})
-# Detener todos los hilos antes de salir del programa
-for thread in threading.enumerate():
-    if thread != threading.current_thread():
-        thread.join()
-pygame.quit()
-sys.exit()
+    jugando = True
+    while jugando:
+        if mi_jugador == 1:
+            jugando = manejar_eventos_teclado_jugador1(avion_local, todos_sprites, rocas_sprites, puntuacion)
+
+        ventana.fill((0, 0, 0))  # Limpia la ventana antes de redibujar los aviones
+        avion_local.update()
+        avion_remoto.update()
+        todos_sprites.update()  # Actualiza todos los sprites
+        rocas_sprites.update()  # Actualiza los asteroides
+
+        # Dibujar todos los sprites en la pantalla
+        ventana.blit(fondo_img, (0, 0))  # Dibujar el fondo
+        ventana.blit(avion_local.image, avion_local.rect)
+        ventana.blit(avion_remoto.image, avion_remoto.rect)
+        todos_sprites.draw(ventana)
+        rocas_sprites.draw(ventana)
+
+        # Mostrar puntuación en pantalla
+        font = pygame.font.Font(None, 36)
+        texto_puntuacion = font.render("Puntuación: " + str(puntuacion.puntos), True, BLANCO)
+        ventana.blit(texto_puntuacion, (10, 10))
+
+        pygame.display.flip()  # Actualizar la pantalla
+
+    pygame.quit()
+
+
+if __name__ == '__main__':
+    main()
