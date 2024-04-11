@@ -217,12 +217,12 @@ def leer_coordenadas_jugador2(avion_remoto):
             avion_remoto.target_y = coordenadas_jugador2['y_ship']
 
 
-def leer_coordenadas_jugador1(avion_remoto):
+def leer_coordenadas_jugador1(avion_local):
     while True:
         coordenadas_jugador1 = ref.get()
         if coordenadas_jugador1 is not None:
-            avion_remoto.target_x = coordenadas_jugador1['x_ship']
-            avion_remoto.target_y = coordenadas_jugador1['y_ship']
+            avion_local.target_x = coordenadas_jugador1['x_ship']
+            avion_local.target_y = coordenadas_jugador1['y_ship']
 
 #Definir pantalla de carga
 def loading_screen():
@@ -311,7 +311,7 @@ def main():
         hilo_lectura.start()
 
     if mi_jugador == 2:
-        hilo_lectura = threading.Thread(target=leer_coordenadas_jugador1, args=(avion_remoto,))
+        hilo_lectura = threading.Thread(target=leer_coordenadas_jugador1, args=(avion_local,))
         hilo_lectura.start()
 
     jugando = True
