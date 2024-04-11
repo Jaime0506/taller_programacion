@@ -125,11 +125,6 @@ last_asteroid_time = 0
 
 score = 0
 internal_score = 0
-
-# Last position ship
-# last_position_ship = x_ship_player1
-
-# player2.push({'x_ship': x_ship_player1})
 key = 0
 
 global player
@@ -137,12 +132,9 @@ global ship_player
 global ship_react_player 
 global x_ship_player
 global y_ship_player
-
 global x_shot_player
-
 global last_position_ship
 global shot_player
-
 global ref_ship_player
 
 def loading_screen():
@@ -161,13 +153,13 @@ def loading_screen():
                 sys.exit()
 
         screen.fill((0,0,0))
-        loading_text = font.render("Connecting Players...",True,(255,255,255))
+        loading_text = font.render("Waiting for Players...",True,(255,255,255))
         screen.blit(loading_text, (width//2 - loading_text.get_width()//2, height//2 - loading_text.get_height()//2))
         pygame.display.flip()
 
         if player1_selected and player2_selected:
             loading = False
-            print("Tan ready los players")
+            print("The players are ready")
 
 
 def selectPlayer():
@@ -188,7 +180,7 @@ def selectPlayer():
                         print('Player 1 selected')
                         selected = True
                     else:
-                        print("ya existe este jugador")
+                        print("player 1 already exists")
                 if event.key == pygame.K_2:
                     if not player2_selected:
                         key = 2
@@ -196,15 +188,15 @@ def selectPlayer():
                         print('Player 2 selected')
                         selected = True
                     else:
-                        print("ya existe este jugador")
+                        print("player 2 already exists")
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     sys.exit()
         #lOADING
         screen.fill((0,0,0))
-        selection_text = font.render("Seleccione su jugador:", True, (255, 255, 255))
-        player1_text = font.render("Presione '1' para Jugador 1", True, (255, 255, 255))
-        player2_text = font.render("Presione '2' para Jugador 2", True, (255, 255, 255))
+        selection_text = font.render("Selected Players:", True, (255, 255, 255))
+        player1_text = font.render("Press '1' to choose player 1", True, (255, 255, 255))
+        player2_text = font.render("Press '2' to choose player 2", True, (255, 255, 255))
         screen.blit(selection_text, (width//2 - selection_text.get_width()//2, height//2 - 50))
         screen.blit(player1_text, (width//2 - player1_text.get_width()//2, height//2))
         screen.blit(player2_text, (width//2 - player2_text.get_width()//2, height//2 + 50))
@@ -272,22 +264,22 @@ def move_ship(keys):
     
     if keys[pygame.K_LEFT] and ship_react_player.x > 0:
         ship_react_player = ship_react_player.move(-speed_ship, 0)
-        x_ship_player1 -= speed_ship
+        x_ship_player -= speed_ship
     if keys[pygame.K_RIGHT] and ship_react_player.x < 555:
         ship_react_player = ship_react_player.move(speed_ship, 0)
-        x_ship_player1 += speed_ship
+        x_ship_player += speed_ship
 
     #update position
     if key == 1:
         x_ship_player2_new_position = player2.child('-NtXK3NuN1Ly55ArPwUi').get('x_ship')
         if x_ship_player2_new_position is not None:
-            x_ship_player2 = x_ship_player2_new_position
-            ship_react_player2.x = x_ship_player2
+            x_ship_player = x_ship_player2_new_position
+            ship_react_player.x = x_ship_player
     elif key == 2:
         x_ship_player1_new_position = player1.child('-Nsz_waZceu5sMSuXRXq').get('x_ship')
         if x_ship_player1_new_position is not None:
-            x_ship_player1 = x_ship_player1_new_position
-            ship_react_player1.x = x_ship_player1
+            x_ship_player = x_ship_player1_new_position
+            ship_react_player.x = x_ship_player
             
 
     #to render ships  
