@@ -2,6 +2,7 @@ import pygame
 import os
 import random
 import threading
+import sys
 
 import firebase_admin
 from firebase_admin import credentials, db
@@ -13,16 +14,26 @@ key = os.path.join(key_path, 'space-shooter-9c882-firebase-adminsdk-tndg0-ca7618
 cred = credentials.Certificate(key)
 firebase_admin.initialize_app(cred, {'databaseURL': 'https://space-shooter-9c882-default-rtdb.firebaseio.com/'})
 
-ref = db.reference('/player_1')
-ref_ship = ref.child('-Nsz_waZceu5sMSuXRXq')
+# Referencias a la base de datos de los jugadores
+ref_player_1 = db.reference('/player_1')
+ref_ship_player_1 = ref_player_1.child('-Nsz_waZceu5sMSuXRXq')
+
+ref_player_2 = db.reference('/player_2')
+ref_ship_player_2 = ref_player_2.child('-NtXK3NuN1Ly55ArPwUi')
 
 # Acces path to assets
 assest_path = os.path.join(os.path.dirname(__file__), 'assets')
 
 background_path = os.path.join(assest_path, 'background.jpg')
 
-ship_path = os.path.join(assest_path, 'nave.png')
+# PLAYER 1
+ship_path = os.path.join(assest_path, 'player_1.png')
 shot_path = os.path.join(assest_path, 'shot.png')
+
+# PLAYER 2
+ship_path_2 = os.path.join(assest_path, 'player_2.png')
+shot_path_2 = os.path.join(assest_path, 'shot.png')
+
 asteroid_path = os.path.join(assest_path, 'asteroid.png')
 game_over_text_path = os.path.join(assest_path, 'game_over.png')
 
@@ -42,28 +53,44 @@ screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption("Asteroid game")
 
 # Load assets
+
+# Player 1
 ship = pygame.image.load(ship_path)
-background = pygame.image.load(background_path).convert()
 shot = pygame.image.load(shot_path)
+
+# Player 2
+ship_2 = pygame.image.load(ship_path_2)
+shot_2 = pygame.image.load(shot_path_2)
+
+background = pygame.image.load(background_path).convert()
 asteroid = pygame.image.load(asteroid_path)
 game_over_text = pygame.image.load(game_over_text_path).convert()
 
 #  Load assets sounds
 shot_sound = pygame.mixer.Sound(shot_sound_path)
+
 background_sound = pygame.mixer.Sound(background_sound_path)
 game_over_sound = pygame.mixer.Sound(game_over_sound_path)
 
 # Resize assets
 background = pygame.transform.scale(background, (width, height))
 
+# PLayer 1
 ship = pygame.transform.scale(ship, (ship.get_width() // 4, ship.get_height() // 4))
 shot = pygame.transform.scale(shot, (shot.get_width() // 12, shot.get_height() // 12))
+
+# Player 2
+ship_2 = pygame.transform.scale(ship_2, (ship_2.get_width() // 4, ship_2.get_height() // 4))
+shot_2 = pygame.transform.scale(shot_2, (shot_2.get_width() // 12, shot_2.get_height() // 12))
+
 asteroid = pygame.transform.scale(asteroid, (asteroid.get_width() // 2.5, asteroid.get_height() // 2.5))
 game_over_text = pygame.transform.scale(game_over_text, (width, height))
 
 #  Initial position ship
+
+# Player 1
 shipRect = ship.get_rect()
-x_ship, y_ship = width / 2 - shipRect.width / 2, height - 100
+x_ship, y_ship = width / 2 - shipRect.width / 2 + 200, height - 100
 
 shipRect.move_ip(x_ship, y_ship)
 
@@ -72,6 +99,16 @@ shotRect = shot.get_rect()
 x_shot, y_shot = x_ship + 18, y_ship - 30
 
 shotRect.move_ip(x_shot, y_shot)
+
+# Player 2
+shipRect_2 = ship_2.get_rect()
+x_ship_2, y_ship_2 = width / 2 - shipRect.width / 2 - 200, height - 100
+
+shotRect_2 = shot_2.get_rect()
+x_shot_2, y_shot_2 = x_ship_2 + 18, y_ship_2 - 30
+
+shipRect_2.move_ip(x_ship_2, y_ship_2)
+shotRect_2.move_ip(x_shot_2, y_shot_2)
 
 # Asteroid
 asteroidRect = asteroid.get_rect()
@@ -102,12 +139,81 @@ internal_score = 0
 # Last position ship
 last_position_ship = x_ship
 
+def loading_screen():
+    loading = True
+
+    while loading:
+
+        player1 = ref_player_1.get()
+        player2 = ref_player_2.get()
+
+        player1_selected = player1['-Nsz_waZceu5sMSuXRXq']['active']
+        player2_selected = player2['-NtXK3NuN1Ly55ArPwUi']['active']
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        screen.fill((0,0,0))
+        loading_text = font.render("Waiting for Players...",True,(255,255,255))
+        screen.blit(loading_text, (width//2 - loading_text.get_width()//2, height//2 - loading_text.get_height()//2))
+        pygame.display.flip()
+
+        if player1_selected and player2_selected:
+            loading = False
+            print("The players are ready")
+
+def selected_player():
+    global key
+
+    player1 = ref_player_1.get()
+    player2 = ref_player_2.get()
+
+    player1_selected = player1['-Nsz_waZceu5sMSuXRXq']['active']
+    player2_selected = player2['-NtXK3NuN1Ly55ArPwUi']['active']
+
+    selected = False
+    
+    while not selected:
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1:
+                    if not player1_selected:
+                        key = 1
+                        ref_ship_player_1.update({'active':True})
+                        print('Player 1 selected')
+                        selected = True
+                    else:
+                        print("player 1 already exists")
+                if event.key == pygame.K_2:
+                    if not player2_selected:
+                        key = 2
+                        ref_ship_player_2.update({'active':True})
+                        print('Player 2 selected')
+                        selected = True
+                    else:
+                        print("player 2 already exists")
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
+
+        #lOADING - MESSAGE
+        screen.fill((0,0,0))
+        selection_text = font.render("Selected Players:", True, (255, 255, 255))
+        player1_text = font.render("Press '1' to choose player 1", True, (255, 255, 255))
+        player2_text = font.render("Press '2' to choose player 2", True, (255, 255, 255))
+        screen.blit(selection_text, (width//2 - selection_text.get_width()//2, height//2 - 50))
+        screen.blit(player1_text, (width//2 - player1_text.get_width()//2, height//2))
+        screen.blit(player2_text, (width//2 - player2_text.get_width()//2, height//2 + 50))
+        pygame.display.flip()
+
 def update_database():
     global x_ship
     global last_position_ship
 
     if last_position_ship != x_ship:
-        ref_ship.update({'x_ship': x_ship})
+        ref_ship_player_1.update({'x_ship': x_ship})
         last_position_ship = x_ship
 
 def ship_functions(keys):
@@ -233,6 +339,21 @@ def draw_collision_rectangles():
     for asteroid in asteroids:
         pygame.draw.rect(screen, (0, 0, 255), asteroid, 2)
 
+def draw_player_2():
+    global screen
+
+    player2 = ref_player_2.get()
+    isActive = player2['-NtXK3NuN1Ly55ArPwUi']['active']
+    
+    if (isActive):
+        screen.blits(ship_2, shipRect_2)
+
+def move_player_2():
+
+    print("me muevo")
+# selected_player()
+# loading_screen()
+
 while playing:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -250,6 +371,8 @@ while playing:
 
     ship_functions(keys)
     generate_asteroids()
+
+    draw_player_2()
 
     for rock in asteroids:
         rock.move_ip(0, +speed_asteroid)
@@ -288,3 +411,11 @@ while playing:
     pygame.time.Clock().tick(60)
 
 pygame.quit()
+
+# Resetear a CERO
+
+if key == 1:
+    ref_ship_player_1.update({'active': False})
+
+if key == 2:
+    ref_ship_player_2.update({'active': False})
