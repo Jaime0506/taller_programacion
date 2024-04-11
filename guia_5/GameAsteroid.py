@@ -198,7 +198,7 @@ def manejar_eventos_teclado_jugador2(avion_remoto, todos_sprites, rocas_sprites,
     })
 
     return True
-
+                    
 
 # Función para leer las coordenadas del avión remoto desde Firebase
 def leer_coordenadas_jugador2(avion_remoto):
@@ -319,11 +319,12 @@ def main():
 
         pygame.display.flip()  # Actualizar la pantalla
     pygame.quit()
-ref_ship_player1.update({'active':False})
-ref_ship_player2.update({'active':False})
+
 if __name__ == '__main__':
     try:
         main()
     except Exception as e:
         print(f"Se produjo un error en el juego: {e}")
         pygame.quit()
+ref_ship_player1.update({'active':False})
+ref_ship_player2.update({'active':False})
