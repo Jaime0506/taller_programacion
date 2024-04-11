@@ -312,6 +312,7 @@ def main():
 
     if mi_jugador == 2:
         hilo_lectura = threading.Thread(target=leer_coordenadas_jugador1, args=(avion_remoto,))
+        hilo_lectura.start()
 
     jugando = True
     while jugando:
