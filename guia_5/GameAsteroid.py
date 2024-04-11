@@ -239,57 +239,62 @@ def update_database():
 
 #listen changes in firebase
 def listen_player_online():
-    global x_ship_player1, y_ship_player1, x_ship_player2, y_ship_player2
-
+    global x_ship_player, y_ship_player
     def callback(event):
         data = event.data
         if data is not None:
             if key == 1:
-                x_ship_player2 = data.get('x_ship', x_ship_player)
-                y_ship_player2 = data.get('y_ship', y_ship_player)  # Se actualiza y_ship_player2
+                x_ship_player = data.get('x_ship', x_ship_player) # Recibir datos del Firebase
+                y_ship_player = data.get('y_ship', y_ship_player) # Recibir datos del Firebase
             elif key == 2:
-                x_ship_player1 = data.get('x_ship', x_ship_player)
-                y_ship_player1 = data.get('y_ship', y_ship_player)  # Se actualiza y_ship_player1
+                x_ship_player = data.get('x_ship', x_ship_player) # Recibir datos del Firebase
+                y_ship_player = data.get('y_ship', y_ship_player) # Recibir datos del Firebase
 
     player_ref1 = player1.child('-Nsz_waZceu5sMSuXRXq')
     player_ref2 = player2.child('-NtXK3NuN1Ly55ArPwUi')
     player_ref1.listen(callback)
     player_ref2.listen(callback)
 
-#New Thread
-threading.Thread(target=listen_player_online).start()
+# #New Thread
+# threading.Thread(target=listen_player_online).start()
 
 def move_ship(keys):
-    global ship_react_player, x_ship_player, x_ship_player1, x_ship_player2, last_position_ship, ship_player1, ship_player2
-    
+    global ship_react_player, x_ship_player, x_ship_player1, x_ship_player2, last_position_ship, ship_player1, ship_player
+
     if keys[pygame.K_LEFT] and ship_react_player.x > 0:
         ship_react_player = ship_react_player.move(-speed_ship, 0)
-        x_ship_player -= speed_ship
+        if key == 1:
+            x_ship_player1 -= speed_ship
+            x_ship_player = x_ship_player1
+            ref_ship_player1.update({'x_ship': x_ship_player1}) # Enviar datos al Firebase
+
+        elif key == 2:
+            x_ship_player2 -= speed_ship
+            x_ship_player = x_ship_player2
+            ref_ship_player2.update({'x_ship': x_ship_player2}) # Enviar datos al Firebase
+
     if keys[pygame.K_RIGHT] and ship_react_player.x < 555:
         ship_react_player = ship_react_player.move(speed_ship, 0)
-        x_ship_player += speed_ship
+        if key == 1:
+            x_ship_player1 += speed_ship
+            x_ship_player = x_ship_player1
+            ref_ship_player1.update({'x_ship': x_ship_player1}) # Enviar datos al Firebase
 
-    #update position
-    if key == 1:
-        x_ship_player2_new_position = player2.child('-NtXK3NuN1Ly55ArPwUi').get('x_ship')
-        if x_ship_player2_new_position is not None:
-            x_ship_player = x_ship_player2_new_position
-            ship_react_player.x = x_ship_player
-    elif key == 2:
-        x_ship_player1_new_position = player1.child('-Nsz_waZceu5sMSuXRXq').get('x_ship')
-        if x_ship_player1_new_position is not None:
-            x_ship_player = x_ship_player1_new_position
-            ship_react_player.x = x_ship_player
-            
+        elif key == 2:
+            x_ship_player2 += speed_ship
+            x_ship_player = x_ship_player2
+            ref_ship_player2.update({'x_ship': x_ship_player2}) # Enviar datos al Firebase
 
-    #to render ships  
+    last_position_ship = x_ship_player
+    
     screen.blit(background, (0,0))
     screen.blit(ship_player1, ship_react_player1)
     screen.blit(ship_player2, ship_react_player2)
-
     #update thread
     update_thread = threading.Thread(target=update_database)
     update_thread.start()
+    update_database()
+
 
 def fire_bullet():
     global last_shot_time
@@ -362,7 +367,7 @@ def game_over():
 def check_collisions_between_asteroids_ship():
     global asteroids
     for rock in asteroids:
-        if  ship_react_player.colliderect(rock):
+        if  ship_react_player1.colliderect(rock):
             background_sound.stop()
 
             game_over()
@@ -398,6 +403,9 @@ while playing:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             playing = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                playing = False
     keys = pygame.key.get_pressed()
 
     background_sound.play()
@@ -452,5 +460,9 @@ while playing:
 
 ref_ship_player1.update({'active':False})
 ref_ship_player2.update({'active':False})
-
+# Detener todos los hilos antes de salir del programa
+for thread in threading.enumerate():
+    if thread != threading.current_thread():
+        thread.join()
 pygame.quit()
+sys.exit()
