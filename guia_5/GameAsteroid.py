@@ -31,17 +31,25 @@ font = pygame.font.Font(None, 36)
 # Carga de imágenes
 assest_path = os.path.join(os.path.dirname(__file__), 'assets')
 avion_path = os.path.join(assest_path, 'player_1.png')  # Cambia "avion.png" por la ruta de la imagen del avión del jugador 1
+
 avion_img = pygame.image.load(avion_path)
 avion_img = pygame.transform.scale(avion_img, (60, 60))
+
 roca_path = os.path.join(assest_path, 'asteroid.png')
+
 roca_img = pygame.image.load(roca_path)
 roca_img = pygame.transform.scale(roca_img, (50, 50))
-bala_img = pygame.Surface((4, 10))
-bala_img.fill(NEGRO)
+
+bala_path = os.path.join(assest_path, 'shot.png')
+bala_img = pygame.image.load(bala_path)
+bala_img = pygame.transform.scale(bala_img, (bala_img.get_width() // 8, bala_img.get_height() // 8))
+
 fondo_path = os.path.join(assest_path, 'background.jpg')
 fondo_img = pygame.image.load(fondo_path)
 fondo_img = pygame.transform.scale(fondo_img, (ANCHO, ALTO))
 
+ref = db.reference('/player_1/-Nsz_waZceu5sMSuXRXq')
+ref2 = db.reference('/player_2/-NtXK3NuN1Ly55ArPwUi')
 
 class Puntuacion:
     def __init__(self):
@@ -155,7 +163,7 @@ def manejar_eventos_teclado_jugador1(avion_local, todos_sprites, rocas_sprites, 
     avion_local.target_y = min(max(avion_local.target_y, 0), ALTO)
 
     # Escribir las coordenadas del avión local en Firebase para el jugador 1
-    ref = db.reference('/player_1/-Nsz_waZceu5sMSuXRXq')
+    
     ref.update({
         'x_ship': avion_local.target_x,
         'y_ship': avion_local.target_y
@@ -190,8 +198,8 @@ def manejar_eventos_teclado_jugador2(avion_remoto, todos_sprites, rocas_sprites,
     avion_remoto.target_y = min(max(avion_remoto.target_y, 0), ALTO)
 
     # Escribir las coordenadas del avión local en Firebase para el jugador 1
-    ref = db.reference('/player_2/-NtXK3NuN1Ly55ArPwUi')
-    ref.update({
+    
+    ref2.update({
         'x_ship': avion_remoto.target_x,
         'y_ship': avion_remoto.target_y
 
@@ -203,11 +211,18 @@ def manejar_eventos_teclado_jugador2(avion_remoto, todos_sprites, rocas_sprites,
 # Función para leer las coordenadas del avión remoto desde Firebase
 def leer_coordenadas_jugador2(avion_remoto):
     while True:
-        ref = db.reference('/player_2/-NtXK3NuN1Ly55ArPwUi')
-        coordenadas_jugador2 = ref.get()
+        coordenadas_jugador2 = ref2.get()
         if coordenadas_jugador2 is not None:
             avion_remoto.target_x = coordenadas_jugador2['x_ship']
             avion_remoto.target_y = coordenadas_jugador2['y_ship']
+
+
+def leer_coordenadas_jugador1(avion_remoto):
+    while True:
+        coordenadas_jugador1 = ref.get()
+        if coordenadas_jugador1 is not None:
+            avion_remoto.target_x = coordenadas_jugador1['x_ship']
+            avion_remoto.target_y = coordenadas_jugador1['y_ship']
 
 #Definir pantalla de carga
 def loading_screen():
@@ -290,8 +305,13 @@ def main():
         pygame.time.wait(200)  # Añadir un pequeño retraso entre la generación de cada asteroide
 
     # Crear y arrancar el hilo para leer las coordenadas del avión remoto
-    hilo_lectura = threading.Thread(target=leer_coordenadas_jugador2, args=(avion_remoto,))
-    hilo_lectura.start()
+
+    if mi_jugador == 1:
+        hilo_lectura = threading.Thread(target=leer_coordenadas_jugador2, args=(avion_remoto,))
+        hilo_lectura.start()
+
+    if mi_jugador == 2:
+        hilo_lectura = threading.Thread(target=leer_coordenadas_jugador1, args=(avion_remoto,))
 
     jugando = True
     while jugando:
