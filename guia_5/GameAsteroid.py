@@ -1,4 +1,4 @@
-import pygame, sys, random, threading,os,firebase_admin, os
+import pygame, sys, random, threading,os,firebase_admin, os, time
 from firebase_admin import db, exceptions,credentials
 
 # Inicialización de Firebase para el jugador 1
@@ -12,6 +12,8 @@ try:
 
     player2 = db.reference('/player_2')
     ref_ship_player2 = player2.child('-NtXK3NuN1Ly55ArPwUi')
+
+    asteroids_ref = db.reference('/asteroids')
 
 except exceptions.FirebaseError as firebase_error:
     print(f"Se peto esta mrda: {firebase_error}")
@@ -215,6 +217,7 @@ def leer_coordenadas_jugador2(avion_remoto):
         if coordenadas_jugador2 is not None:
             avion_remoto.target_x = coordenadas_jugador2['x_ship']
             avion_remoto.target_y = coordenadas_jugador2['y_ship']
+        time.sleep(0.001)
 
 
 def leer_coordenadas_jugador1(avion_local):
@@ -223,6 +226,15 @@ def leer_coordenadas_jugador1(avion_local):
         if coordenadas_jugador1 is not None:
             avion_local.target_x = coordenadas_jugador1['x_ship']
             avion_local.target_y = coordenadas_jugador1['y_ship']
+        time.sleep(0.001)
+        
+def generar_asteroides(todos_sprites, rocas_sprites):
+    # Generar asteroides
+    for _ in range(5):  # Reducir el número de asteroides
+        roca = Roca()
+        todos_sprites.add(roca)
+        rocas_sprites.add(roca)
+        pygame.time.wait(200)
 
 #Definir pantalla de carga
 def loading_screen():
@@ -295,14 +307,11 @@ def main():
     todos_sprites = pygame.sprite.Group()  # Grupo para todos los sprites (aviones, láseres, asteroides, etc.)
     rocas_sprites = pygame.sprite.Group()  # Grupo para los asteroides
 
+    
     puntuacion = Puntuacion()  # Crear objeto de puntuación
 
-    # Generar asteroides
-    for _ in range(5):  # Reducir el número de asteroides
-        roca = Roca()
-        todos_sprites.add(roca)
-        rocas_sprites.add(roca)
-        pygame.time.wait(200)  # Añadir un pequeño retraso entre la generación de cada asteroide
+    generar_asteroides(todos_sprites, rocas_sprites)
+      # Añadir un pequeño retraso entre la generación de cada asteroide
 
     # Crear y arrancar el hilo para leer las coordenadas del avión remoto
 
@@ -347,5 +356,6 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"Se produjo un error en el juego: {e}")
         pygame.quit()
+
 ref_ship_player1.update({'active':False})
 ref_ship_player2.update({'active':False})
