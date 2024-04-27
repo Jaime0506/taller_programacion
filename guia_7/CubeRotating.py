@@ -26,7 +26,7 @@ def Face():
     drawLine(c1[2][0], c1[2][1], c1[3][0], c1[3][1])
     drawLine(c1[3][0], c1[3][1], c1[0][0], c1[0][1])
 
-def Face_2(x, y, t):
+def Face_2():
 
     global c2
 
@@ -73,50 +73,57 @@ def Face_top_floor():
     for i in range (0, 4):
         drawLine(c1[i][0], c1[i][1], c2[i][0], c2[i][1])
 
-def rotate(Cx, Cy, angulo, n_coord):
+def Rotate(Cx, Cy, angulo, c):
 
-    x_new = (c1[n_coord][0] - Cx) * math.cos(angulo) - (c1[n_coord][1]) * math.sin(angulo) + Cx
-    y_new = (c1[n_coord][0] - Cx) * math.sin(angulo) + (c1[n_coord][1] - Cy) * math.cos(angulo) + Cy
+    for rows in range(4):
+        
+        x_relative = c[rows][0] - Cx
+        y_relative = c[rows][1] - Cy
 
-    turtle.goto(x_new, y_new)
-    turtle.pendown()
-    
+        x_new = x_relative * math.cos(angulo) - y_relative * math.sin(angulo) + Cx
+        y_new = x_relative * math.sin(angulo) + y_relative * math.cos(angulo) + Cy
 
-    return x_new, y_new
+        c[rows] = [x_new, y_new]
+
+def drawCircle(start_angule, i):
+    if (i % 5) == 0:
+        start_angule += 1
+
+    Rotate(x, y, start_angule, c1)
+    Face()
+
+    Rotate(x + t/2, y + t/2, start_angule, c2)
+    Face_2()
+
+    Face_top_floor()
+
+    print(start_angule)
 
 x, y, t = 0, 0, 200
 
-# Cara 1
 Vertex_face_1(x, y, t)
-Face()
+Vertex_face_2(x + t/2, y + t/2, t)
 
-# Cara 2
-# x = x + t/2
-# y = y + t/2
+start_angule = 1
 
-# Vertex_face_2(x, y, t)
-# Face_2(x, y, 200)
+def move(slope):
+    global x
+    x = x + 10
 
-# Face_top_floor()
+    if (slope == 1):
+        y = y + 10
 
-[x_new, y_new] = rotate(0, 0, 45, 0)
-[x_new, y_new] = rotate(0, 0, 45, 1)
-[x_new, y_new] = rotate(0, 0, 45, 2)
-[x_new, y_new] = rotate(0, 0, 45, 3)
-[x_new, y_new] = rotate(0, 0, 45, 0)
-
-turtle.penup()
-
-[x_new, y_new] = rotate(0, 0, 90, 0)
-[x_new, y_new] = rotate(0, 0, 90, 1)
-[x_new, y_new] = rotate(0, 0, 90, 2)
-[x_new, y_new] = rotate(0, 0, 90, 3)
-[x_new, y_new] = rotate(0, 0, 90, 0)
+    if (slope == -1):
+        y = y - 10
 
 
-# [x_new, y_new] = rotate(0, 0, 45, 1)
-# drawLine(x_new, y_new, x_new + t, y_new - t/2)
-# Vertex_face_1(x_new, y_new, t)
-# Face()
+for i in range(1, 100):
+    drawCircle(start_angule, i)
+
+    move(0)
+
+
+    
+
 
 turtle.done()
