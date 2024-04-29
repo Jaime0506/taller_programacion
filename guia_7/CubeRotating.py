@@ -106,6 +106,9 @@ x, y, t = 0, 0, 200
 Vertex_face_1(x, y, t)
 Vertex_face_2(x + t/2, y + t/2, t)
 
+print(c1)
+print(c2)
+
 start_angule = 1
 
 def move(slope_x = 1, slope_y = 0):
