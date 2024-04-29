@@ -85,7 +85,11 @@ def Rotate(Cx, Cy, angulo, c):
 
         c[rows] = [x_new, y_new]
 
-def drawCircle(start_angule, i):
+start_angule = 1
+
+def drawCircle(i):
+    global start_angule
+
     if (i % 5) == 0:
         start_angule += 1
 
@@ -97,8 +101,6 @@ def drawCircle(start_angule, i):
 
     Face_top_floor()
 
-    print(start_angule)
-
 x, y, t = 0, 0, 200
 
 Vertex_face_1(x, y, t)
@@ -106,24 +108,40 @@ Vertex_face_2(x + t/2, y + t/2, t)
 
 start_angule = 1
 
-def move(slope):
+def move(slope_x = 1, slope_y = 0):
     global x
-    x = x + 10
+    global y
 
-    if (slope == 1):
+    if (slope_x == 1):
+        x = x + 10
+
+    if (slope_x == -1):
+        x = x - 10
+
+    if (slope_y == 1):
         y = y + 10
 
-    if (slope == -1):
+    if (slope_y == -1):
         y = y - 10
 
+screen = turtle.Screen()
+width =  screen.window_width()
+heigth = screen.window_height()
+
+direction  = 1
+flag = True
 
 for i in range(1, 100):
-    drawCircle(start_angule, i)
+    drawCircle(i)
 
-    move(0)
+    if (x >= 140 and flag):
+        direction = -1
+        flag = False
 
-
+    if (x <= -200 and not flag):
+        direction = 1
+        flag = True
     
-
+    move(direction)
 
 turtle.done()
