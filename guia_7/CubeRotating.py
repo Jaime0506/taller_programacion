@@ -1,8 +1,10 @@
 import turtle
 import math
+import time
 
 turtle.speed(0)
 turtle.penup()
+turtle.tracer(60)
 
 turtle.goto(0,0)
 
@@ -74,14 +76,15 @@ def Face_top_floor():
         drawLine(c1[i][0], c1[i][1], c2[i][0], c2[i][1])
 
 def Rotate(Cx, Cy, angulo, c):
+    rad = math.radians(angulo)
 
     for rows in range(4):
         
         x_relative = c[rows][0] - Cx
         y_relative = c[rows][1] - Cy
 
-        x_new = x_relative * math.cos(angulo) - y_relative * math.sin(angulo) + Cx
-        y_new = x_relative * math.sin(angulo) + y_relative * math.cos(angulo) + Cy
+        x_new = x_relative * math.cos(angulo/100) - y_relative * math.sin(angulo/100) + Cx
+        y_new = x_relative * math.sin(angulo/100) + y_relative * math.cos(angulo/100) + Cy
 
         c[rows] = [x_new, y_new]
 
@@ -91,7 +94,7 @@ def drawCircle(i):
     global start_angule
 
     if (i % 5) == 0:
-        start_angule += 1
+        start_angule += 0
 
     Rotate(x, y, start_angule, c1)
     Face()
@@ -101,31 +104,25 @@ def drawCircle(i):
 
     Face_top_floor()
 
+    turtle.update()
+
+    time.sleep(0.1)
+    
+
 x, y, t = 0, 0, 200
 
 Vertex_face_1(x, y, t)
 Vertex_face_2(x + t/2, y + t/2, t)
-
-print(c1)
-print(c2)
-
-start_angule = 1
 
 def move(slope_x = 1, slope_y = 0):
     global x
     global y
 
     if (slope_x == 1):
-        x = x + 10
+        x = x + 5
 
     if (slope_x == -1):
-        x = x - 10
-
-    if (slope_y == 1):
-        y = y + 10
-
-    if (slope_y == -1):
-        y = y - 10
+        x = x - 5
 
 screen = turtle.Screen()
 width =  screen.window_width()
@@ -134,17 +131,19 @@ heigth = screen.window_height()
 direction  = 1
 flag = True
 
-for i in range(1, 100):
-    drawCircle(i)
+while True:
+    drawCircle(1)
 
-    if (x >= 140 and flag):
+    if (x >= 190 and flag):
         direction = -1
         flag = False
 
-    if (x <= -200 and not flag):
+    if (x <= -230 and not flag):
         direction = 1
         flag = True
-    
+
     move(direction)
+    turtle.clear()
+    
 
 turtle.done()
