@@ -1,0 +1,15 @@
+En caso de que el juego al tratar de ejecutarlo vote el error de que no encontro
+la ruta del archivo .json, debe verificar que efecticamente este la consola en la
+ruta raiz del proyecto. Pero la mejor forma de evitar este problema es abriendolo
+de la siguiente manera:
+
+1. Descargar el archivo y descomprimirlo
+2. Click derecho en la carpeta descomprimida, y abrir en VS Code
+3. Ejecutar el Main.py
+
+en caso de que este en Windows 11, darle click en mas opciones
+y abrir en VS Code
+
+NOTA:"EL EXTRAER NO ES NECESARIO EXTRAERLO EN UNA SUBCARPETA, SIMPLEMENTE CON EXTRAER AQUI"
+
+NOTA2: "PARA SALIRSE DEL JUEGO Y GUARDAR LOS DATOS EN EL JSON DEBE PULSAR LA TECLA ESC o ESCAPE DEL TECLADO"

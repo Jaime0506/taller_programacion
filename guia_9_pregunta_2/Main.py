@@ -1,6 +1,15 @@
 from ursina import *
 from ursina.prefabs.first_person_controller import FirstPersonController
 
+import json
+
+with open('data/player.json', 'r') as f:
+    data = json.load(f)
+
+player_x = data['position_player']['x']
+player_y = data['position_player']['y']
+player_z = data['position_player']['z']
+
 app = Ursina()
 
 class Caja3D(Button):
@@ -18,7 +27,7 @@ class Caja3D(Button):
             scale=escala,
             highlight_color=color.lime)
 
-jugador=FirstPersonController(position=(1, 10, 10))
+player=FirstPersonController(position=(player_x, player_y, player_z))
 
 class Hand(Entity):
     xInicio=0 # Posición del arma en el eje X
@@ -79,6 +88,38 @@ def crear_niveles(nivel_suelo):
             if piso[x] > 1:
                 cajax= Caja3D(position=(x,piso[x],z),escala= (1, piso[x]))
             
+def exit_game():
+    player.enabled = False
+    for e in scene.entities:
+        if isinstance(e, Button):  # O desactiva otros elementos según sea necesario
+            e.enabled = False
+
+    save_game = Text(
+        text='Guardando progreso...',
+        scale=3,
+        position=(0,0),
+        origin=(0,0),
+        color=color.red
+    )
+
+    nueva_posicion = {
+        'position_player': {
+            'x': player.position.x,
+            'y': player.position.y,
+            'z': player.position.z
+        }
+    }
+
+    with open('data/player.json', 'w') as f:
+        json.dump(nueva_posicion, f)
+    
+    # Salir del juego
+    invoke(application.quit, delay=1) 
+
+def input(key):
+    if key == 'escape':
+        exit_game()
+
 
 crear_niveles(nivel)
 arm = Hand()
